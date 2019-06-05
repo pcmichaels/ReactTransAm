@@ -14,15 +14,50 @@ class Game extends React.Component {
             playerX: 100,
             playerY: 100,
             windowWidth: 0,
-            windowHeight: 0
+            windowHeight: 0,
+            playerMomentum: 0,
+            playerRotation: 0,
+            playerVelocityX: 0,
+            playerVelocityY: 0
         };
 
         this.playerWidth = 50;
         this.playerHeight = 50;
 
         this.updateWindowDimensions = this.updateWindowDimensions.bind(this);
-        this.onKeyDown = this.onKeyDown.bind(this);
+        this.onKeyDown = this.onKeyDown.bind(this);      
+                
     }    
+
+    gameLoop() {        
+        const radians = (this.state.playerRotation - 90) * Math.PI / 180;        
+
+        const aX = (this.state.playerMomentum * Math.cos(radians));
+        const aY = (this.state.playerMomentum * Math.sin(radians));
+
+        const velocityX = this.state.playerVelocityX;
+        const velocityY = this.state.playerVelocityY;
+        const velocitySq = Math.pow(velocityX, 2) + Math.pow(velocityY, 2);
+        const posSq = Math.pow(aX, 2) + Math.pow(aY, 2);
+        const velocityPosSq = Math.pow(velocityX * aX + velocityY * aY, 2);
+       
+        let skidFactor = (posSq == 0 || velocitySq == 0) ? 0 : 1 - (velocityPosSq / posSq / velocitySq);
+        if (skidFactor <= 0) skidFactor = 0;
+
+        console.log('skid: ' + skidFactor);
+
+        this.setState({
+            playerVelocityX: (skidFactor * velocityX) + ((1 - skidFactor) * aX),
+            playerVelocityY: (skidFactor * velocityY) + ((1 - skidFactor) * aY)
+        });        
+        this.playerMove(
+            this.state.playerX + this.state.playerVelocityX,
+            this.state.playerY + this.state.playerVelocityY 
+        );
+
+        this.playerDecelerate(-(0.1 + skidFactor));
+        
+    }
 
     playerMove(x, y) {
         this.setState({
@@ -30,20 +65,44 @@ class Game extends React.Component {
             playerY: y
         });        
     }
+
+    playerAccelerate(speed) {
+        this.setState({
+            playerMomentum: this.state.playerMomentum + speed
+        });
+    }
+
+    playerDecelerate(speed) {
+        if (this.state.playerMomentum > 0) {
+            this.setState({
+                playerMomentum: this.state.playerMomentum + speed
+            });
+        } else if (this.state.playerMomentum < 0) {
+            this.setState({
+                playerMomentum: this.state.playerMomentum - speed
+            });
+        }
+    }
+
+    playerSteer(direction) {
+        this.setState({
+            playerRotation: this.state.playerRotation + direction
+        });
+    }
   
     onKeyDown(e) {
         switch (e.which) {
             case 37: // Left
-                this.playerMove(this.state.playerX - this.SPEED, this.state.playerY);                
+                this.playerSteer(-10);
                 break;
             case 38: // Up
-                this.playerMove(this.state.playerX, this.state.playerY - this.SPEED);
+                this.playerAccelerate(0.3);
                 break;
             case 39: // Right
-                this.playerMove(this.state.playerX + this.SPEED, this.state.playerY);                
+                this.playerSteer(10);
                 break;
             case 40: // Down
-                this.playerMove(this.state.playerX, this.state.playerY + this.SPEED);
+                this.playerAccelerate(-0.5);
                 break;
             default:
                 break;
@@ -55,11 +114,14 @@ class Game extends React.Component {
 
         this.updateWindowDimensions();
         window.addEventListener('resize', this.updateWindowDimensions);
+        
+        this.intervalId = setInterval(this.gameLoop.bind(this), 100);
     }
 
     componentWillUnmount(){
         document.removeEventListener("keydown", this.onKeyDown, false);
         window.removeEventListener('resize', this.updateWindowDimensions);
+        clearInterval(this.intervalId);
     }    
 
     updateWindowDimensions() {
@@ -72,7 +134,7 @@ class Game extends React.Component {
                 windowWidth={this.state.windowWidth} windowHeight={this.state.windowHeight} />     
             <Car carImage={carImg} centreX={this.state.playerX} 
                 centreY={this.state.playerY} width={this.playerWidth}
-                height={this.playerHeight} />       
+                height={this.playerHeight} rotation={this.state.playerRotation} />       
         </div>
     }
 }

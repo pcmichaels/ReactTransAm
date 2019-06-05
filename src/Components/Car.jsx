@@ -10,6 +10,7 @@ function Car(props) {
         top: `calc(${top}px)`,
         left: `calc(${left}px)`,                 
         position: 'absolute',
+        transform: `rotate(${props.rotation}deg)`,
         zIndex: 1        
     };
 
