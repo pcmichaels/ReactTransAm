@@ -1,8 +1,10 @@
 import React from 'react';
 import backgroundImg from '../Assets/Background.png';
+import treeImg from '../Assets/Tree.png';
 import carImg from '../Assets/Car.png';
 import Background from './Background';
 import Car from './Car';
+import Obstacle from './Obstacle';
 
 class Game extends React.Component {
     SPEED = 1;
@@ -10,24 +12,43 @@ class Game extends React.Component {
     constructor(props) {
         super(props);
 
+        document.body.style.overflow = "hidden";
+
         this.state = {
             playerX: 100,
             playerY: 100,
-            windowWidth: 0,
-            windowHeight: 0,
+            windowWidth: 1500,
+            windowHeight: 1500,
             playerMomentum: 0,
             playerRotation: 0,
             playerVelocityX: 0,
             playerVelocityY: 0
         };
 
-        this.playerWidth = 50;
-        this.playerHeight = 50;
+        this.spriteWidth = 25;
+        this.spriteHeight = 25;
 
         this.updateWindowDimensions = this.updateWindowDimensions.bind(this);
         this.onKeyDown = this.onKeyDown.bind(this);      
-                
-    }    
+        
+        this.obstacles = this.buildObstacles();        
+    }
+
+    buildObstacles() {
+        let obstacles = [];
+        const obstacleCount = Math.floor(Math.random() * 10) + 1;
+        console.log('Obstacle count ' + obstacleCount);
+        for (let i = 1; i <= obstacleCount; i++) {
+            const centreX = Math.floor(Math.random() * this.state.windowWidth) + 1;
+            const centreY = Math.floor(Math.random() * this.state.windowHeight) + 1;
+
+            console.log('Obstacle x / y ' + centreX + ' / ' + centreY);
+
+            obstacles.push(<Obstacle key={i} image={treeImg} centreX={centreX} centreY={centreY} width={this.spriteWidth} height={this.spriteHeight} />);
+        }
+
+        return obstacles;
+    }
 
     gameLoop() {        
         const radians = (this.state.playerRotation - 90) * Math.PI / 180;        
@@ -42,9 +63,7 @@ class Game extends React.Component {
         const velocityPosSq = Math.pow(velocityX * aX + velocityY * aY, 2);
        
         let skidFactor = (posSq == 0 || velocitySq == 0) ? 0 : 1 - (velocityPosSq / posSq / velocitySq);
-        if (skidFactor <= 0) skidFactor = 0;
-
-        console.log('skid: ' + skidFactor);
+        if (skidFactor <= 0) skidFactor = 0;        
 
         this.setState({
             playerVelocityX: (skidFactor * velocityX) + ((1 - skidFactor) * aX),
@@ -102,7 +121,7 @@ class Game extends React.Component {
                 this.playerSteer(10);
                 break;
             case 40: // Down
-                this.playerAccelerate(-0.5);
+                this.playerDecelerate(-0.5);
                 break;
             default:
                 break;
@@ -133,8 +152,9 @@ class Game extends React.Component {
             <Background backgroundImage={backgroundImg}
                 windowWidth={this.state.windowWidth} windowHeight={this.state.windowHeight} />     
             <Car carImage={carImg} centreX={this.state.playerX} 
-                centreY={this.state.playerY} width={this.playerWidth}
-                height={this.playerHeight} rotation={this.state.playerRotation} />       
+                centreY={this.state.playerY} width={this.spriteWidth}
+                height={this.spriteHeight} rotation={this.state.playerRotation} />     
+            {this.obstacles}  
         </div>
     }
 }
