@@ -25,16 +25,37 @@ class Game extends React.Component {
             playerVelocityX: 0,
             playerVelocityY: 0,
             playerLives: 3,
-            gameLoopActive: false
+            gameLoopActive: false,
+            message: ""
         };
 
         this.spriteWidth = 25;
         this.spriteHeight = 25;
 
         this.updateWindowDimensions = this.updateWindowDimensions.bind(this);
-        this.onKeyDown = this.onKeyDown.bind(this);      
-        
+        this.onKeyDown = this.onKeyDown.bind(this);                  
+
+        this.initiateNewGame();
+    }
+
+    initiateNewGame() {
         this.obstacles = this.buildObstacles();        
+
+        this.setState({ 
+            playerLives: 3,
+            message: "New game"
+        });
+
+        this.resetCarPosition();
+    }
+
+    resetCarPosition() {
+        this.setState({ 
+            playerMomentum: 0,
+            playerVelocityX: 0,
+            playerVelocityY: 0,
+            playerRotation: 0
+        });
     }
 
     buildObstacles() {
@@ -208,15 +229,17 @@ class Game extends React.Component {
         } while (this.detectAnyCollision());
     }
 
-    PlayerDies() {        
+    PlayerDies() {               
         this.setState({
             playerLives: this.state.playerLives - 1,
-            gameLoopActive: false,
-            playerMomentum: 0,
-            playerVelocityX: 0,
-            playerVelocityY: 0,
-            playerRotation: 0
+            gameLoopActive: false
         });
+
+        if (this.state.playerLives <= 0) {
+            this.initiateNewGame();
+        } else {
+            this.resetCarPosition();
+        }
 
         this.repositionPlayer();
 
@@ -228,7 +251,7 @@ class Game extends React.Component {
     render() {        
         return <div onKeyDown={this.onKeyDown} tabIndex="0">
 
-            <GameStatus Lives={this.state.playerLives} />
+            <GameStatus Lives={this.state.playerLives} Message={this.state.message}/>
 
             <Background backgroundImage={backgroundImg}
                 windowWidth={this.state.windowWidth} windowHeight={this.state.windowHeight} />  

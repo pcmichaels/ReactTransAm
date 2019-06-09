@@ -6,10 +6,15 @@ function GameStatus(props) {
         zIndex: 1
     };
 
-    return (        
-        <label style={style}>
-            Lives Remaining: {props.Lives}
-        </label>
+    return (      
+        <div>
+            <label style={style}>
+                Lives Remaining: {props.Lives}
+            </label>
+            <label>
+                {props.Message}
+            </label>
+        </div>  
     );
 }
 
