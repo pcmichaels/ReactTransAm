@@ -2,6 +2,7 @@ import React from 'react';
 import backgroundImg from '../Assets/Background.png';
 import treeImg from '../Assets/Tree.png';
 import carImg from '../Assets/Car.png';
+import brokenCarImg from '../Assets/Crash.png';
 import Background from './Background';
 import Car from './Car';
 import Obstacle from './Obstacle';
@@ -25,6 +26,7 @@ class Game extends React.Component {
             playerVelocityX: 0,
             playerVelocityY: 0,
             playerLives: 3,
+            playerCrashed: false,
             gameLoopActive: false,
             message: ""
         };
@@ -49,11 +51,18 @@ class Game extends React.Component {
         this.resetCarPosition();
     }
 
-    resetCarPosition() {
+    stopCar() {
         this.setState({ 
             playerMomentum: 0,
             playerVelocityX: 0,
-            playerVelocityY: 0,
+            playerVelocityY: 0           
+        });
+    }
+
+    resetCarPosition() {
+        this.stopCar();
+
+        this.setState({ 
             playerRotation: 0
         });
     }
@@ -101,7 +110,7 @@ class Game extends React.Component {
         this.playerDecelerate(-(0.1 + skidFactor));
     
         if (this.detectAnyCollision()) {
-            this.PlayerDies();                    
+            this.playerDying(1000);                    
         }
     }
 
@@ -229,7 +238,18 @@ class Game extends React.Component {
         } while (this.detectAnyCollision());
     }
 
-    PlayerDies() {               
+    playerDying(tillDeath) {
+        this.setState({
+            playerCrashed: true,
+            gameLoopActive: false
+        });
+
+        this.stopCar();
+
+        setTimeout(this.playerDies.bind(this), tillDeath);
+    }
+
+    playerDies() {               
         this.setState({
             playerLives: this.state.playerLives - 1,
             gameLoopActive: false
@@ -244,6 +264,7 @@ class Game extends React.Component {
         this.repositionPlayer();
 
         this.setState({            
+            playerCrashed: false,
             gameLoopActive: true
         });
     }
@@ -256,9 +277,10 @@ class Game extends React.Component {
             <Background backgroundImage={backgroundImg}
                 windowWidth={this.state.windowWidth} windowHeight={this.state.windowHeight} />  
 
-            <Car carImage={carImg} centreX={this.state.playerX} 
-                centreY={this.state.playerY} width={this.spriteWidth}
-                height={this.spriteHeight} rotation={this.state.playerRotation} />     
+            <Car carImage={this.state.playerCrashed ? brokenCarImg : carImg} 
+                centreX={this.state.playerX} centreY={this.state.playerY} 
+                width={this.spriteWidth} height={this.spriteHeight} 
+                rotation={this.state.playerRotation} />     
 
             {this.obstacles}  
         </div>
