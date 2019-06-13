@@ -1,6 +1,6 @@
 import React from 'react';
 
-function Obstacle(props) {
+function GameItem(props) {
     const left = Math.round(props.centreX - (props.width / 2));
     const top = Math.round(props.centreY - (props.height / 2));
 
@@ -18,4 +18,4 @@ function Obstacle(props) {
     );
 }
 
-export default Obstacle;
+export default GameItem;

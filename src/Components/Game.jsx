@@ -3,9 +3,10 @@ import backgroundImg from '../Assets/Background.png';
 import treeImg from '../Assets/Tree.png';
 import carImg from '../Assets/Car.png';
 import brokenCarImg from '../Assets/Crash.png';
+import cupImg from '../Assets/Cup.png';
 import Background from './Background';
 import Car from './Car';
-import Obstacle from './Obstacle';
+import GameItem from './GameItem';
 import GameStatus from './GameStatus';
 
 class Game extends React.Component {
@@ -28,27 +29,40 @@ class Game extends React.Component {
             playerLives: 3,
             playerCrashed: false,
             gameLoopActive: false,
-            message: ""
+            message: "",
+            score: 0
         };
 
         this.spriteWidth = 25;
         this.spriteHeight = 25;
 
+        this.halfWidth = this.spriteWidth / 2;
+        this.halfHeight = this.spriteHeight / 2;
+
         this.updateWindowDimensions = this.updateWindowDimensions.bind(this);
         this.onKeyDown = this.onKeyDown.bind(this);                  
-
-        this.initiateNewGame();
+        
     }
 
     initiateNewGame() {
         this.obstacles = this.buildObstacles();        
+        this.cups = this.placeCups();
 
         this.setState({ 
-            playerLives: 3,
-            message: "New game"
-        });
+            playerLives: 3            
+        });        
+
+        this.updateMessage("New game");
 
         this.resetCarPosition();
+    }
+
+    updateMessage(message) {
+        this.setState({ 
+            message: message
+        });        
+
+        setTimeout(function() {this.setState({ message: "" });}.bind(this), 5000);
     }
 
     stopCar() {
@@ -70,15 +84,27 @@ class Game extends React.Component {
     buildObstacles() {
         let obstacles = [];
         const obstacleCount = Math.floor(Math.random() * 10) + 1;
-        console.log('Obstacle count ' + obstacleCount);
         for (let i = 1; i <= obstacleCount; i++) {
             const centreX = Math.floor(Math.random() * this.state.windowWidth) + 1;
             const centreY = Math.floor(Math.random() * this.state.windowHeight) + 1;            
 
-            obstacles.push(<Obstacle key={i} image={treeImg} centreX={centreX} centreY={centreY} width={this.spriteWidth} height={this.spriteHeight} />);
+            obstacles.push(<GameItem key={i} image={treeImg} centreX={centreX} centreY={centreY} width={this.spriteWidth} height={this.spriteHeight} itemType={1} />);
         }
 
         return obstacles;
+    }
+
+    placeCups() {
+        let cups = [];
+        const cupCount = 1;
+        for (let i = 1; i <= cupCount; i++) {
+            const centreX = Math.floor(Math.random() * this.state.windowWidth) + 1;
+            const centreY = Math.floor(Math.random() * this.state.windowHeight) + 1;            
+
+            cups.push(<GameItem key={i} image={cupImg} centreX={centreX} centreY={centreY} width={this.spriteWidth} height={this.spriteHeight} itemType={2} />);
+        }
+
+        return cups;
     }
 
     gameLoop() {
@@ -109,9 +135,34 @@ class Game extends React.Component {
 
         this.playerDecelerate(-(0.1 + skidFactor));
     
-        if (this.detectAnyCollision()) {
+        let rect1 = this.getPlayerRect()
+
+        // Check for crash
+        if (this.detectAnyCollision(rect1)) {
             this.playerDying(1000);                    
         }
+
+        // Check for collected cup
+        const item = this.detectGameItemCollision(this.halfWidth, this.halfHeight, rect1, this.cups);
+        if (item !== undefined) {
+            this.collectedCup(item.key);
+        }        
+        
+    }
+
+    getPlayerRect(halfWidth, halfHeight) {
+        return {
+            x: this.state.playerX - this.halfWidth, y: this.state.playerY - this.halfHeight,
+            width: this.spriteWidth, height: this.spriteHeight
+        };
+    }
+
+    collectedCup(key) {
+        this.setState({ score: this.state.score + 1 });
+
+        this.cups = this.cups.filter(cup => cup.key != key);
+
+        this.updateMessage("Collected cup");
     }
 
     playerMove(x, y) {
@@ -173,6 +224,8 @@ class Game extends React.Component {
         this.intervalId = setInterval(this.gameLoop.bind(this), 100);
 
         this.setState({ gameLoopActive: true });
+
+        this.initiateNewGame();
     }
 
     componentWillUnmount(){
@@ -185,28 +238,32 @@ class Game extends React.Component {
         this.setState({ windowWidth: window.innerWidth, windowHeight: window.innerHeight });
     }
 
-    detectAnyCollision() {        
-        const halfWidth = this.spriteWidth / 2;
-        const halfHeight = this.spriteHeight / 2;
+    detectAnyCollision(rect1) {        
+        // Have we crashed or left the screen
+        if (this.detectOutScreen(rect1)) {
+            return true;
+        }
 
-        return this.obstacles.some(a => {
-            let rect1 = {x: this.state.playerX - halfWidth, y: this.state.playerY - halfHeight, 
-                width: this.spriteWidth, height: this.spriteHeight}
-            var rect2 = {x: a.props.centreX - halfWidth, y: a.props.centreY - halfHeight, 
-                width: this.spriteWidth, height: this.spriteHeight}
-            
-            if (this.detectOutScreen(rect1)) {
-                return true;
-            }
+        let collided = this.detectGameItemCollision(this.halfWidth, this.halfHeight, rect1, this.obstacles);
+        if (collided !== undefined) {
+            return true;
+        }
 
-            if (this.detectCollision(rect1, rect2)) {
-                return true;
-            } else {
-                return false;
-            }
-        });
+        return false;
     }
 
+    detectGameItemCollision(halfWidth, halfHeight, rect1, gameItemList) {
+        const collided = gameItemList.find(a => {
+            var rect2 = {
+            x: a.props.centreX - halfWidth, y: a.props.centreY - halfHeight,
+                width: this.spriteWidth, height: this.spriteHeight
+            };
+            return (this.detectCollision(rect1, rect2));
+        });        
+
+        return collided;
+    }
+    
     detectCollision(rect1, rect2) {
         if (rect1.x < rect2.x + rect2.width &&
             rect1.x + rect1.width > rect2.x &&
@@ -225,17 +282,22 @@ class Game extends React.Component {
         return false;
     }
 
-    repositionPlayer() {
+    repositionPlayer() {        
 
         do {
             // Pace the player at a random point on the map
             const centreX = Math.floor(Math.random() * this.state.windowWidth) + 1;
             const centreY = Math.floor(Math.random() * this.state.windowHeight) + 1;            
 
-            this.playerMove(centreX, centreY);
+            this.playerMove(centreX, centreY);            
 
             // Check that we haven't caused a colision
-        } while (this.detectAnyCollision());
+        } while (this.playerHasCrashed());
+    }
+
+    playerHasCrashed() {
+        let rect1 = this.getPlayerRect(this.halfWidth, this.halfHeight); 
+        return this.detectAnyCollision(rect1);
     }
 
     playerDying(tillDeath) {
@@ -272,7 +334,7 @@ class Game extends React.Component {
     render() {        
         return <div onKeyDown={this.onKeyDown} tabIndex="0">
 
-            <GameStatus Lives={this.state.playerLives} Message={this.state.message}/>
+            <GameStatus Lives={this.state.playerLives} Message={this.state.message} Score={this.state.score} />
 
             <Background backgroundImage={backgroundImg}
                 windowWidth={this.state.windowWidth} windowHeight={this.state.windowHeight} />  
@@ -283,6 +345,8 @@ class Game extends React.Component {
                 rotation={this.state.playerRotation} />     
 
             {this.obstacles}  
+
+            {this.cups}  
         </div>
     }
 }
