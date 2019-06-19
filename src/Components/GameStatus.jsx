@@ -26,6 +26,12 @@ function GameStatus(props) {
                 Score: {props.Score}
             </label>
             <label style={labelStyle}>
+                Level: {props.Level}
+            </label>
+            <label style={labelStyle}>
+                Time: {props.RemainingTime}
+            </label>
+            <label style={labelStyle}>
                 {props.Message}
             </label>
         </div>  

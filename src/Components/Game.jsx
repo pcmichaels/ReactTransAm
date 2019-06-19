@@ -11,6 +11,7 @@ import GameStatus from './GameStatus';
 
 class Game extends React.Component {
     SPEED = 1;
+    TOPLEVEL = 10;
 
     constructor(props) {
         super(props);
@@ -20,8 +21,8 @@ class Game extends React.Component {
         this.state = {
             playerX: 100,
             playerY: 100,
-            windowWidth: 1500,
-            windowHeight: 1500,
+            windowWidth: window.innerWidth,
+            windowHeight: window.innerHeight,
             playerMomentum: 0,
             playerRotation: 0,
             playerVelocityX: 0,
@@ -30,14 +31,17 @@ class Game extends React.Component {
             playerCrashed: false,
             gameLoopActive: false,
             message: "",
-            score: 0
+            score: 0,
+            level: 1,
+            cupCount: 1,            
+            remainingTime: 0
         };
 
         this.spriteWidth = 25;
         this.spriteHeight = 25;
 
         this.halfWidth = this.spriteWidth / 2;
-        this.halfHeight = this.spriteHeight / 2;
+        this.halfHeight = this.spriteHeight / 2;        
 
         this.updateWindowDimensions = this.updateWindowDimensions.bind(this);
         this.onKeyDown = this.onKeyDown.bind(this);                  
@@ -45,16 +49,14 @@ class Game extends React.Component {
     }
 
     initiateNewGame() {
-        this.obstacles = this.buildObstacles();        
-        this.cups = this.placeCups();
-
         this.setState({ 
-            playerLives: 3            
+            playerLives: 3,
+            level: 1
         });        
 
         this.updateMessage("New game");
 
-        this.resetCarPosition();
+        this.startLevel(this.state.level);
     }
 
     updateMessage(message) {
@@ -83,7 +85,7 @@ class Game extends React.Component {
 
     buildObstacles() {
         let obstacles = [];
-        const obstacleCount = Math.floor(Math.random() * 10) + 1;
+        const obstacleCount = Math.floor(Math.random() * (this.state.level * 2)) + 1;
         for (let i = 1; i <= obstacleCount; i++) {
             const centreX = Math.floor(Math.random() * this.state.windowWidth) + 1;
             const centreY = Math.floor(Math.random() * this.state.windowHeight) + 1;            
@@ -96,10 +98,10 @@ class Game extends React.Component {
 
     placeCups() {
         let cups = [];
-        const cupCount = 1;
-        for (let i = 1; i <= cupCount; i++) {
-            const centreX = Math.floor(Math.random() * this.state.windowWidth) + 1;
-            const centreY = Math.floor(Math.random() * this.state.windowHeight) + 1;            
+        
+        for (let i = 1; i <= this.state.cupCount; i++) {            
+            const centreX = Math.floor(Math.random() * (this.state.windowWidth - this.spriteWidth)) + this.halfWidth;
+            const centreY = Math.floor(Math.random() * (this.state.windowHeight - this.spriteHeight)) + this.halfHeight;            
 
             cups.push(<GameItem key={i} image={cupImg} centreX={centreX} centreY={centreY} width={this.spriteWidth} height={this.spriteHeight} itemType={2} />);
         }
@@ -146,8 +148,19 @@ class Game extends React.Component {
         const item = this.detectGameItemCollision(this.halfWidth, this.halfHeight, rect1, this.cups);
         if (item !== undefined) {
             this.collectedCup(item.key);
-        }        
+        }
         
+        let remaining = (this.endLevelTimeMS - (new Date()).getTime()) / 1000;
+
+        if (remaining <= 0) {
+            this.updateMessage("Out of time!");
+            this.playerDies();
+        }
+
+        this.setState({
+            remainingTime: Math.round(remaining)
+        });                
+
     }
 
     getPlayerRect(halfWidth, halfHeight) {
@@ -158,11 +171,42 @@ class Game extends React.Component {
     }
 
     collectedCup(key) {
-        this.setState({ score: this.state.score + 1 });
+        this.setState({ 
+            score: this.state.score + 1            
+        });
 
         this.cups = this.cups.filter(cup => cup.key != key);
-
+        
         this.updateMessage("Collected cup");
+
+        if (this.cups.length == 0) {
+            this.completedLevel();
+        }        
+    }
+
+    completedLevel() {
+        if (this.state.level >= 10) {
+            this.updateMessage("Congratulations, you've completed the game");
+        }        
+
+        this.startLevel(this.state.level + 1);
+    }
+
+    startLevel(level) {        
+        
+        this.setState({
+            level: level,
+            cupCount: level * 2 
+        });        
+
+        this.obstacles = this.buildObstacles();        
+        this.cups = this.placeCups();
+
+        this.resetCarPosition();
+        
+        this.totalLevelTimeMS = (this.TOPLEVEL - (this.state.level - 1)) * 60 * 1000
+        let startLevelTimeMS = (new Date()).getTime();
+        this.endLevelTimeMS = startLevelTimeMS + this.totalLevelTimeMS;        
     }
 
     playerMove(x, y) {
@@ -234,8 +278,10 @@ class Game extends React.Component {
         clearInterval(this.intervalId);
     }    
 
-    updateWindowDimensions() {
+    updateWindowDimensions() {        
         this.setState({ windowWidth: window.innerWidth, windowHeight: window.innerHeight });
+
+        console.log('width: ' + this.state.windowWidth + ', height: ' + this.state.windowHeight);
     }
 
     detectAnyCollision(rect1) {        
@@ -334,10 +380,15 @@ class Game extends React.Component {
     render() {        
         return <div onKeyDown={this.onKeyDown} tabIndex="0">
 
-            <GameStatus Lives={this.state.playerLives} Message={this.state.message} Score={this.state.score} />
+            <GameStatus Lives={this.state.playerLives} 
+                Message={this.state.message} 
+                Score={this.state.score} 
+                RemainingTime={this.state.remainingTime}
+                Level={this.state.level} />
 
             <Background backgroundImage={backgroundImg}
-                windowWidth={this.state.windowWidth} windowHeight={this.state.windowHeight} />  
+                windowWidth={this.state.windowWidth} 
+                windowHeight={this.state.windowHeight} />  
 
             <Car carImage={this.state.playerCrashed ? brokenCarImg : carImg} 
                 centreX={this.state.playerX} centreY={this.state.playerY} 
