@@ -1,4 +1,5 @@
 import React from 'react';
+import clockImg from '../Assets/Clock.png';
 
 function GameStatus(props) {
 
@@ -17,6 +18,26 @@ function GameStatus(props) {
         margin: 50
     };
 
+    const containerStyle = {
+        position: 'relative',
+        textAlign: 'center',
+        color: 'red'
+    }
+
+    const textDivStyle = {        
+        position: 'absolute',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        zIndex: 1,
+        fontWeight: 'bold'
+    }
+
+    const imgStyle = {
+        width: '100%',
+        zIndex: 0
+    }
+
     return (      
         <div className="flex-container" style={flexStyle}>
             <label style={labelStyle}>
@@ -27,10 +48,13 @@ function GameStatus(props) {
             </label>
             <label style={labelStyle}>
                 Level: {props.Level}
-            </label>
-            <label style={labelStyle}>
-                Time: {props.RemainingTime}
-            </label>
+            </label>            
+            
+            <div style={containerStyle}>  
+                <img src={clockImg} style={imgStyle} />
+                <div style={textDivStyle}>{props.RemainingTime}</div>
+            </div>
+
             <label style={labelStyle}>
                 {props.Message}
             </label>
