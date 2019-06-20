@@ -203,8 +203,8 @@ class Game extends React.Component {
         this.cups = this.placeCups();
 
         this.resetCarPosition();
-        
-        this.totalLevelTimeMS = (this.TOPLEVEL - (this.state.level - 1)) * 60 * 1000
+                
+        this.totalLevelTimeMS = (this.TOPLEVEL - (this.state.level - 1)) * 60 * 1000 
         let startLevelTimeMS = (new Date()).getTime();
         this.endLevelTimeMS = startLevelTimeMS + this.totalLevelTimeMS;        
     }
@@ -366,7 +366,7 @@ class Game extends React.Component {
         if (this.state.playerLives <= 0) {
             this.initiateNewGame();
         } else {
-            this.resetCarPosition();
+            this.startLevel(this.state.level);
         }
 
         this.repositionPlayer();
