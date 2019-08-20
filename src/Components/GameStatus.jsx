@@ -58,6 +58,11 @@ function GameStatus(props) {
             <label style={labelStyle}>
                 {props.Message}
             </label>
+
+            <div style={containerStyle}>
+                <input type='text' value={props.Username}
+                    onChange={props.onChangeUsername} />
+            </div>
         </div>  
     );
 }

@@ -34,7 +34,8 @@ class Game extends React.Component {
             score: 0,
             level: 1,
             cupCount: 1,            
-            remainingTime: 0
+            remainingTime: 0,
+            username: ''
         };
 
         this.spriteWidth = 25;
@@ -72,6 +73,12 @@ class Game extends React.Component {
             playerMomentum: 0,
             playerVelocityX: 0,
             playerVelocityY: 0           
+        });
+    }
+
+    updateUserName(newUserName) {
+        this.setState({
+            username: newUserName
         });
     }
 
@@ -170,6 +177,10 @@ class Game extends React.Component {
         };
     }
 
+    updateHighScore() {
+        
+    }
+
     collectedCup(key) {
         this.setState({ 
             score: this.state.score + 1            
@@ -238,6 +249,10 @@ class Game extends React.Component {
         this.setState({
             playerRotation: this.state.playerRotation + direction
         });
+    }
+
+    onChangeUsername(e) {
+        this.updateUserName(e.target.value);
     }
   
     onKeyDown(e) {
@@ -384,7 +399,9 @@ class Game extends React.Component {
                 Message={this.state.message} 
                 Score={this.state.score} 
                 RemainingTime={this.state.remainingTime}
-                Level={this.state.level} />
+                Level={this.state.level}
+                Username={this.state.username} 
+                onChangeUsername={this.onChangeUsername.bind(this)} />
 
             <Background backgroundImage={backgroundImg}
                 windowWidth={this.state.windowWidth} 
