@@ -379,6 +379,7 @@ class Game extends React.Component {
         });
 
         if (this.state.playerLives <= 0) {
+            this.updateHighScore();
             this.initiateNewGame();
         } else {
             this.startLevel(this.state.level);
