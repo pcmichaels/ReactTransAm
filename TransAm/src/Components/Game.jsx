@@ -178,7 +178,9 @@ class Game extends React.Component {
     }
 
     updateHighScore() {
-        
+        fetch('http://localhost:7071/api/AddHighScores?name=' + this.state.username + '&score=' + this.state.score, {
+            method: 'POST'
+        });            
     }
 
     collectedCup(key) {

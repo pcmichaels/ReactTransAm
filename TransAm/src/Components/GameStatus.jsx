@@ -38,7 +38,8 @@ function GameStatus(props) {
         zIndex: 0
     }
 
-    return (      
+
+    return (    
         <div className="flex-container" style={flexStyle}>
             <label style={labelStyle}>
                 Lives Remaining: {props.Lives}
